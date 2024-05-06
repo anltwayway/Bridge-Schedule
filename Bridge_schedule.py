@@ -1,5 +1,7 @@
 import pandas as pd
 import math
+import tkinter as tk
+from tkinter import simpledialog
 
 # Step 1: Read excavation data
 def read_excavation_data(filename):
@@ -59,9 +61,20 @@ def generate_bridge_table(bridge_sections):
     
     return bridge_table
 
-# Input filename and excavation threshold
+# Input filename
 excavation_filename = "填挖高度表.xlsx"
-threshold = 12
+
+# Create Tkinter root window
+root = tk.Tk()
+root.withdraw() # Hide the root window
+
+# Prompt user to input threshold for bridge excavation height
+threshold_input = simpledialog.askfloat("桥梁填挖高度的阈值", "请输入桥梁填挖高度的阈值（单位：米，默认为12）：", initialvalue=12)
+
+if threshold_input is not None:
+    threshold = threshold_input
+else:
+    threshold = 12
 
 # Read excavation data
 excavation_data = read_excavation_data(excavation_filename)
