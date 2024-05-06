@@ -28,10 +28,11 @@ def find_bridge_sections(df, threshold):
     return bridge_sections
 
 # Step 3: Generate the bridge table
-def generate_bridge_table(bridge_sections):
-    bridge_table = pd.DataFrame(columns=['Start Chainage', 'Chainage', 'End Chainage', 'Length (30m units)'])
+def generate_bridge_table(bridge_sections, threshold):
+    bridge_table = pd.DataFrame(columns=['No.', 'Start Chainage', 'Chainage', 'End Chainage', 'Length (30m units)', 'Bridge Length'])
+    total_length = 0
 
-    for start, end in bridge_sections:
+    for i, (start, end) in enumerate(bridge_sections, start=1):
         start_int = int(start)
         end_int = int(end)
         
@@ -45,21 +46,39 @@ def generate_bridge_table(bridge_sections):
         # If the difference between end and start chainage is not a multiple of 30m, add 1 bridge
         num_bridges = math.ceil((adjusted_end_chainage - adjusted_start_chainage) / 30)
         
+        # Calculate bridge length
+        bridge_length = adjusted_end_chainage - adjusted_start_chainage
+        
         # Update center chainage
         center_chainage = (adjusted_start_chainage + adjusted_end_chainage) / 2
         
+        # Update total length
+        total_length += bridge_length
+        
         bridge_data = {
+            'No.': [i],
             'Start Chainage': [adjusted_start_chainage],
             'Chainage': [center_chainage],
             'End Chainage': [adjusted_end_chainage],
-            'Length (30m units)': [num_bridges]
+            'Length (30m units)': [num_bridges],
+            'Bridge Length': [bridge_length]
         }
         bridge_table = pd.concat([bridge_table, pd.DataFrame(bridge_data)], ignore_index=True)
     
     # Remove rows where Length (30m units) is 0
     bridge_table = bridge_table[bridge_table['Length (30m units)'] != 0]
     
-    return bridge_table
+    # Insert threshold value into table name
+    bridge_table_name = f"{threshold}m桥梁表.xlsx"
+    
+    # Insert total length row
+    total_length_row = pd.DataFrame({
+        'No.': ['总长度'],
+        'Bridge Length': [total_length]
+    })
+    bridge_table = pd.concat([bridge_table, total_length_row], ignore_index=True)
+    
+    return bridge_table, bridge_table_name
 
 # Input filename
 excavation_filename = "填挖高度表.xlsx"
@@ -83,7 +102,7 @@ excavation_data = read_excavation_data(excavation_filename)
 bridge_sections = find_bridge_sections(excavation_data, threshold)
 
 # Generate bridge table
-bridge_table = generate_bridge_table(bridge_sections)
+bridge_table, bridge_table_name = generate_bridge_table(bridge_sections, threshold)
 
 # Export bridge table to Excel file
-bridge_table.to_excel("桥梁表.xlsx", index=False)
+bridge_table.to_excel(bridge_table_name, index=False)
